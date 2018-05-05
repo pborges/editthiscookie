@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-type cookie struct {
+type Cookie struct {
 	Domain         string  `json:"domain"`
 	ExpirationDate float64 `json:"expirationDate"`
 	HostOnly       bool    `json:"hostOnly"`
@@ -24,14 +24,10 @@ type cookie struct {
 	ID             int     `json:"id"`
 }
 
-func Load(client *http.Client, reader io.Reader, u *url.URL) error {
-	etc := make([]cookie, 0)
-	err := json.NewDecoder(reader).Decode(&etc)
-	if err != nil {
-		return err
-	}
-	cookies := make([]*http.Cookie, len(etc))
-	for i, c := range etc {
+func LoadFromStruct(client *http.Client, c []Cookie, u *url.URL) error {
+	var err error
+	cookies := make([]*http.Cookie, len(c))
+	for i, c := range c {
 		cookies[i] = new(http.Cookie)
 		cookies[i].Name = c.Name
 		cookies[i].Value = c.Value
@@ -47,4 +43,13 @@ func Load(client *http.Client, reader io.Reader, u *url.URL) error {
 	}
 	client.Jar.SetCookies(u, cookies)
 	return nil
+}
+
+func Load(client *http.Client, reader io.Reader, u *url.URL) error {
+	etc := make([]Cookie, 0)
+	err := json.NewDecoder(reader).Decode(&etc)
+	if err != nil {
+		return err
+	}
+	return LoadFromStruct(client, etc, u)
 }
